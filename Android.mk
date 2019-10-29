@@ -219,6 +219,10 @@ UPDATER_SCRIPT_SRC := $(LOCAL_PATH)/updater-script
 ANDROID_VERSION_MAJOR := $(word 1, $(subst ., , $(PLATFORM_VERSION)))
 ANDROID_VERSION_MINOR := $(word 2, $(subst ., , $(PLATFORM_VERSION)))
 
+ifeq ($(ANDROID_VERSION_MINOR),)
+    ANDROID_VERSION_MINOR := 0
+endif
+
 ifeq ($(TARGET_OTA_ASSERT_DEVICE),)
     ASSERT_DEVICE := assert(getprop("ro.product.device") == "$(TARGET_DEVICE)" \|\| getprop("ro.build.product") == "$(TARGET_DEVICE)" \|\| getprop("ro.cm.device") == "$(TARGET_DEVICE)");
 else
@@ -262,7 +266,7 @@ $(LOCAL_BUILT_MODULE): $(UPDATER_UNPACK_SRC)
 	@echo "Installing updater .zip script resources."
 	mkdir -p $(dir $@)
 	rm -rf $@
-	@sed -e 's %DEVICE% $(TARGET_DEVICET) g' \
+	@sed -e 's %DEVICE% $(TARGET_DEVICE) g' \
 	     $(UPDATER_UNPACK_SRC) > $@
 
 HYBRIS_UPDATER_UNPACK := $(LOCAL_BUILD_MODULE)
@@ -276,12 +280,12 @@ else
 $(warning Skipping build of hybris-updater-script since HYBRIS_BOOT_PART is not specified)
 endif
 
-HYBRIS_COMMON_ANDROID8_TARGETS := verity_signer boot_signer e2fsdroid vendorimage ramdisk libselinux_stubs libsurfaceflinger libsf_compat_layer libhwc2_compat_layer bootctl
+HYBRIS_COMMON_ANDROID8_TARGETS := verity_signer boot_signer e2fsdroid vendorimage ramdisk libselinux_stubs libsurfaceflinger libhwc2_compat_layer bootctl fec
 
 ifeq ($(shell test $(ANDROID_VERSION_MAJOR) -ge 8 && echo true),true)
 HYBRIS_COMMON_TARGETS += $(HYBRIS_COMMON_ANDROID8_TARGETS)
 # for 64 bit Android, also include the 32 bit variants that we need.
-HYBRIS_COMMON_64_BIT_EXTRA_TARGETS = linker_32 libc_32 libEGL_32 libGLESv1_CM_32 libGLESv2_32 libsf_compat_layer_32 libhwc2_compat_layer_32
+HYBRIS_COMMON_64_BIT_EXTRA_TARGETS = linker_32 libc_32 libEGL_32 libGLESv1_CM_32 libGLESv2_32 libhwc2_compat_layer_32
 else
 # for 64 bit Android, also include the 32 bit variants that we need.
 HYBRIS_COMMON_64_BIT_EXTRA_TARGETS = linker_32 libc_32 libEGL_32 libGLESv1_CM_32 libGLESv2_32
@@ -297,3 +301,6 @@ endif
 
 hybris-hal: $(HYBRIS_TARGETS)
 
+droidmedia: $(shell external/droidmedia/detect_build_targets.sh $(PORT_ARCH) $(TARGET_ARCH))
+
+audioflingerglue: $(shell external/audioflingerglue/detect_build_targets.sh $(PORT_ARCH) $(TARGET_ARCH))
